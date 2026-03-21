@@ -1,0 +1,1 @@
+"# it-budgeting-strategy"  initgit add README.mdgit commit -m "first commit"git branch -M maingit remote add origin https://github.com/Saar0/it-budgeting-strategy.gitgit push -u origin main

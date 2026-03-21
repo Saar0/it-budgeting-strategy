@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>IT Budget Strategist | AI-Powered Expense Tracking</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    /* Your existing styles remain the same - keeping them concise for brevity */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #eef2f7; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; padding: 24px 20px; color: #1e293b; }
+    .app-wrapper { max-width: 1600px; margin: 0 auto; background: white; border-radius: 28px; box-shadow: 0 20px 35px -12px rgba(0,0,0,0.15); overflow: hidden; }
+    .top-bar { background: #0f172a; padding: 24px 32px; color: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .title-area h1 { font-size: 1.9rem; font-weight: 600; letter-spacing: -0.3px; }
+    .title-area p { color: #a5b4fc; margin-top: 6px; font-weight: 400; }
+    .year-indicator { background: #1e293b; padding: 10px 20px; border-radius: 60px; text-align: center; border: 1px solid #334155; }
+    .year-indicator .current-year-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; }
+    .year-indicator .year-value { font-size: 1.8rem; font-weight: 800; line-height: 1; color: #facc15; }
+    .health-status { background: #f1f5f9; padding: 8px 20px; font-size: 0.75rem; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 8px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; display: inline-block; }
+    .status-dot.healthy { background: #10b981; box-shadow: 0 0 5px #10b981; }
+    .dashboard-stats { display: flex; flex-wrap: wrap; gap: 16px; padding: 20px 32px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+    .stat-card { flex: 1; background: white; border-radius: 20px; padding: 16px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; transition: transform 0.2s; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .stat-card .label { font-size: 0.75rem; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; }
+    .stat-card .value { font-size: 1.8rem; font-weight: 700; color: #0f172a; }
+    .grid-2col { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 24px; padding: 28px 32px; background: #f8fafc; }
+    .card { background: white; border-radius: 24px; border: 1px solid #e2e8f0; overflow: hidden; }
+    .card-header { padding: 18px 24px; background: #ffffff; border-bottom: 1px solid #eef2ff; font-weight: 600; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+    .card-header:hover { background: #fafcff; }
+    .card-header .toggle-icon { font-size: 1.2rem; transition: transform 0.2s; }
+    .card-body { padding: 20px 24px; transition: all 0.2s; }
+    .card-body.collapsed { display: none; }
+    .input-flex { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+    .input-flex label { font-weight: 600; min-width: 120px; }
+    input, select, button { padding: 10px 14px; border-radius: 14px; border: 1px solid #cbd5e1; font-size: 0.9rem; background: white; }
+    input:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+    button { background: #1e293b; color: white; border: none; font-weight: 500; cursor: pointer; transition: 0.15s; }
+    button:hover { background: #0f172a; transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    .btn-outline { background: white; border: 1px solid #cbd5e1; color: #1e293b; }
+    .btn-outline:hover { background: #f1f5f9; }
+    .btn-danger { background: #b91c1c; }
+    .btn-danger:hover { background: #991b1b; }
+    .btn-success { background: #10b981; }
+    .btn-success:hover { background: #059669; }
+    .btn-ai { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+    .table-responsive { overflow-x: auto; margin: 12px 0; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .data-table th, .data-table td { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    .data-table th { background: #f8fafc; font-weight: 600; }
+    .data-table input { width: 85px; padding: 6px 8px; font-size: 0.75rem; }
+    .variance-positive { color: #dc2626; font-weight: 600; }
+    .variance-negative { color: #16a34a; font-weight: 600; }
+    .var-panel { background: #f1f5f9; border-radius: 20px; padding: 12px; margin: 12px 0; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .var-chip { background: white; border-radius: 40px; padding: 6px 14px; font-size: 0.8rem; font-weight: 500; cursor: pointer; border: 1px solid #cbd5e1; transition: all 0.2s; }
+    .var-chip.active { background: #1e293b; color: white; border-color: #1e293b; }
+    .slider-group { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+    .slider-group input[type='range'] { flex: 2; min-width: 160px; }
+    .recommendation { background: #fef9e3; border-left: 5px solid #eab308; padding: 12px; margin: 12px 0; border-radius: 12px; font-size: 0.85rem; }
+    .cagr-explanation { background: #eef2ff; border-radius: 14px; padding: 12px; margin-top: 12px; font-size: 0.8rem; }
+    .year-selector-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
+    .forecast-legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0; font-size: 0.7rem; }
+    .upload-area { border: 2px dashed #cbd5e1; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: #fafcff; margin-bottom: 16px; }
+    .upload-area:hover { border-color: #3b82f6; background: #f8fafc; }
+    .upload-icon { font-size: 32px; margin-bottom: 8px; }
+    .ai-analysis-card { background: linear-gradient(135deg, #f8f9ff, #ffffff); border-left: 4px solid #3b82f6; padding: 14px; border-radius: 12px; margin-bottom: 14px; }
+    .ai-analysis-card h4 { color: #1e293b; margin-bottom: 10px; font-size: 0.9rem; }
+    .insight-item { margin-bottom: 10px; padding: 8px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.8rem; }
+    .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .notification { position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 12px; background: #10b981; color: white; transform: translateX(400px); transition: transform 0.3s; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.85rem; }
+    @media (max-width: 760px) { .grid-2col { padding: 16px; } .dashboard-stats { flex-direction: column; } .top-bar { flex-direction: column; align-items: flex-start; } }
+  </style>
+</head>
+<body>
+  <div class="app-wrapper">
+    <div class="top-bar">
+      <div class="title-area">
+        <h1>IT Budget Strategist</h1>
+        <p>Expense tracking | Yearly summary | AI-Powered Insights | Multi-variable forecasting</p>
+      </div>
+      <div class="year-indicator" id="yearIndicator">
+        <div class="current-year-label">ACTIVE FISCAL YEAR</div>
+        <div class="year-value" id="activeYearDisplay">2024</div>
+      </div>
+    </div>
+
+    <div class="health-status" id="healthStatus">
+      <span class="status-dot"></span> Checking server connection...
+    </div>
+
+    <div class="dashboard-stats">
+      <div class="stat-card"><div class="label">Total Planned</div><div class="value" id="statPlanned">$0</div></div>
+      <div class="stat-card"><div class="label">Actual Spending</div><div class="value" id="statActual">$0</div></div>
+      <div class="stat-card"><div class="label">Budget Variance</div><div class="value" id="statVariance">$0</div></div>
+      <div class="stat-card"><div class="label">Utilization</div><div class="value" id="statUtil">0%</div></div>
+    </div>
+
+    <div class="grid-2col">
+      <!-- LEFT COLUMN -->
+      <div>
+        <div class="card">
+          <div class="card-header" data-panel="aiAnalysisPanel"><span>🧠 AI Budget Analysis</span><span class="toggle-icon">▼</span></div>
+          <div class="card-body" id="aiAnalysisPanel">
+            <div class="upload-area" id="uploadArea">
+              <div class="upload-icon">📊</div>
+              <div style="font-weight: 500; margin-bottom: 8px;">Upload Excel for AI Analysis</div>
+              <p style="font-size: 0.7rem; color: #64748b;">Supports .xlsx, .xls, .csv</p>
+              <input type="file" id="excelUpload" accept=".xlsx,.xls,.csv" style="display: none;">
+              <button id="uploadBtn" style="margin-top: 12px;" class="btn-outline btn-sm">Select File</button>
+            </div>
+            <div id="uploadStatus" style="margin-bottom: 12px;"></div>
+            <button id="runAIAnalysisBtn" class="btn-ai" style="width: 100%; margin-bottom: 16px;">🔮 Run AI Analysis on Current Data</button>
+            <div id="aiAnalysisResult"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" data-panel="periodPanel"><span>📅 Period Management</span><span class="toggle-icon">▼</span></div>
+          <div class="card-body" id="periodPanel">
+            <div class="year-selector-bar">
+              <label>Fiscal Year:</label>
+              <select id="periodSelect" style="flex: 1; min-width: 120px"></select>
+              <button id="addYearBtn" class="btn-outline btn-sm">+ New Year</button>
+              <button id="deleteYearBtn" class="btn-danger btn-sm">🗑 Delete Current Year</button>
+            </div>
+            <div class="input-flex"><label>Current Period Summary:</label><span id="periodSummaryText" style="font-weight: 500"></span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" data-panel="categoriesPanel"><span>🏷️ Budget Categories</span><span class="toggle-icon">▼</span></div>
+          <div class="card-body" id="categoriesPanel">
+            <div class="input-flex">
+              <label>➕ New Category</label>
+              <input type="text" id="catName" placeholder="e.g., AI Platforms" maxlength="50" />
+              <input type="number" id="catBudget" placeholder="Annual budget $" min="0" step="100" value="0" />
+              <button id="addCatBtn">Add</button>
+            </div>
+            <div id="categoriesList" style="max-height: 260px; overflow-y: auto"></div>
+            <div class="input-flex" style="margin-top: 12px">
+              <label>Quick Preset</label>
+              <select id="presetSelect"><option value="Hardware,50000">Hardware ($50k)</option><option value="Software,35000">Software ($35k)</option><option value="Cloud,30000">Cloud ($30k)</option><option value="AI & ML,25000">AI & ML ($25k)</option></select>
+              <button id="addPresetBtn">Add Preset</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" data-panel="planningPanel"><span>📝 Budget Planning</span><span class="toggle-icon">▼</span></div>
+          <div class="card-body" id="planningPanel">
+            <div class="input-flex"><button id="viewQuarterlyBtn" class="btn-outline btn-sm">Quarterly View</button><button id="viewAnnualBtn" class="btn-outline btn-sm">Annual View</button></div>
+            <div class="table-responsive"><table class="data-table" id="planningTable"><thead id="planningHead"></thead><tbody id="planningBody"></tbody></table></div>
+            <button id="exportPlannedBtn" class="btn-outline btn-sm">📎 Export Planned CSV</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" data-panel="expensePanel"><span>💰 Expense Tracking</span><span class="toggle-icon">▼</span></div>
+          <div class="card-body" id="expensePanel">
+            <div class="input-flex"><button id="trackQuarterlyBtn" class="btn-outline btn-sm">Quarterly View</button><button id="trackAnnualBtn" class="btn-outline btn-sm">Annual View</button></div>
+            <div class="table-responsive"><table class="data-table" id="trackingTable"><thead id="trackingHead"></thead><tbody id="trackingBody"></tbody></table></div>
+            <div class="input-flex"><label>⚡ Quick Add Expense</label><select id="quickExpenseCat"></select><input type="number" id="quickExpenseAmount" placeholder="Amount $" min="0" step="100" value="0" /><button id="quickExpenseBtn">Add to All Quarters</button></div>
+            <button id="exportActualBtn" class="btn-outline btn-sm">📎 Export Actuals CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div>
+        <div class="card">
+          <div class="card-header" data-panel="forecastPanel"><span>🔮 Multi-Variable Forecast</span><span class="toggle-icon">▼</span></div>
+          <div class="card-body" id="forecastPanel">
+            <div class="input-flex"><label>Horizon</label><select id="forecastHorizon"><option value="3">3 Years</option><option value="5" selected>5 Years</option></select><button id="refreshForecastBtn">⟳ Update</button></div>
+            <div class="slider-group"><label style="min-width: 100px">📈 Inflation %</label><input type="range" id="inflationSlider" min="0" max="12" step="0.5" value="3.0" /><span id="inflationValue">3.0%</span><input type="number" id="inflationNumber" step="0.5" value="3.0" style="width:70px" /></div>
+            <div class="slider-group"><label style="min-width: 100px">🤖 AI Investment %</label><input type="range" id="aiSlider" min="0" max="25" step="0.5" value="12.0" /><span id="aiValue">12.0%</span><input type="number" id="aiNumber" step="0.5" value="12.0" style="width:70px" /></div>
+            <div class="slider-group"><label style="min-width: 100px">☁️ Cloud Adoption %</label><input type="range" id="cloudSlider" min="0" max="20" step="1" value="8" /><span id="cloudValue">8%</span></div>
+            <div class="slider-group"><label style="min-width: 100px">⚡ Optimization %</label><input type="range" id="optSlider" min="-12" max="0" step="1" value="-5" /><span id="optValue">-5%</span></div>
+            <div class="var-panel"><span style="font-weight: 600">📌 Scenarios:</span>
+              <div class="var-chip active" data-var="historical">Historical CAGR</div>
+              <div class="var-chip active" data-var="inflation">Inflation</div>
+              <div class="var-chip" data-var="aiInvestment">AI Boost</div>
+              <div class="var-chip" data-var="cloudAdoption">Cloud</div>
+              <div class="var-chip" data-var="optimization">Optimization</div>
+            </div>
+            <canvas id="forecastCanvas" height="180" style="max-height: 200px"></canvas>
+            <div id="forecastLegend" class="forecast-legend"></div>
+            <div id="forecastInsightText" style="background:#f8fafc; padding:10px; border-radius:14px; margin-top:12px; font-size:0.8rem;"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" data-panel="yearlySummaryPanel"><span>📋 Yearly Summary & Variance Analysis</span><span class="toggle-icon">▼</span></div>
+          <div class="card-body" id="yearlySummaryPanel">
+            <div id="yearlySummaryContent" style="margin-bottom: 16px"></div>
+            <div class="table-responsive"><table class="data-table" id="yearlyDetailTable"><thead><tr><th>Category</th><th>Planned</th><th>Actual</th><th>Variance</th><th>Utilization</th></tr></thead><tbody id="yearlyDetailBody"></tbody></table></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" data-panel="insightsPanel"><span>📈 CAGR & AI Recommendations</span><span class="toggle-icon">▼</span></div>
+          <div class="card-body" id="insightsPanel">
+            <div id="cagrBlock" class="cagr-explanation"><strong>📐 CAGR:</strong> measures mean annual growth over multiple years.</div>
+            <div id="dynamicAIInsight" class="recommendation"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" data-panel="historyPanel"><span>📊 Historical Trend</span><span class="toggle-icon">▼</span></div>
+          <div class="card-body" id="historyPanel">
+            <canvas id="historyCanvas" height="130"></canvas>
+            <div class="table-responsive"><table class="data-table"><thead><tr><th>Fiscal Year</th><th>Planned</th><th>Actual</th><th>Util%</th></tr></thead><tbody id="historyBody"></tbody></table></div>
+            <div style="display: flex; gap: 8px; margin-top: 15px"><button id="exportBackupBtn" class="btn-outline btn-sm">💾 Backup</button><button id="importBackupBtn" class="btn-outline btn-sm">📂 Restore</button><button id="resetAllBtn" class="btn-outline btn-sm">⟳ Reset Demo</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="notification" class="notification"></div>
+
+  <script>
+    // ==================== CONSTANTS & CONFIG ====================
+    const API_BASE = 'http://localhost:3001/api';
+    const STORAGE_KEY = 'it_budget_pro_v2';
+    const DEBOUNCE_DELAY = 300;
+    
+    // ==================== GLOBAL STATE ====================
+    let store = {
+      periods: {},
+      categories: [],
+      currentPeriod: '2024',
+      planningAnnualMode: false,
+      trackingAnnualMode: false,
+    };
+    let activeForecastVars = { historical: true, inflation: true, aiInvestment: false, cloudAdoption: false, optimization: false };
+    let forecastChart = null;
+    let historyChart = null;
+    let updateTimeout = null;
+    let isUpdating = false;
+
+    // ==================== UTILITY FUNCTIONS ====================
+    const safeNumber = (val, defaultValue = 0) => {
+      const num = parseFloat(val);
+      return isNaN(num) ? defaultValue : Math.max(0, num);
+    };
+
+    const formatCurrency = (n) => {
+      const num = safeNumber(n);
+      return '$' + Math.round(num).toLocaleString();
+    };
+
+    const getCategoryTotal = (dataObj, catId) => {
+      if (!dataObj || !catId) return 0;
+      const q = dataObj[catId] || { q1: 0, q2: 0, q3: 0, q4: 0 };
+      return safeNumber(q.q1) + safeNumber(q.q2) + safeNumber(q.q3) + safeNumber(q.q4);
+    };
+
+    const getAllTotal = (periodData) => {
+      if (!periodData) return 0;
+      return store.categories.reduce((sum, cat) => sum + getCategoryTotal(periodData, cat.id), 0);
+    };
+
+    const showNotification = (message, type = 'success') => {
+      const notification = document.getElementById('notification');
+      if (!notification) return;
+      notification.textContent = message;
+      notification.style.background = type === 'error' ? '#dc2626' : type === 'warning' ? '#f59e0b' : '#10b981';
+      notification.style.transform = 'translateX(0)';
+      setTimeout(() => {
+        if (notification) notification.style.transform = 'translateX(400px)';
+      }, 3000);
+    };
+
+    const debouncedUpdate = () => {
+      if (updateTimeout) clearTimeout(updateTimeout);
+      updateTimeout = setTimeout(() => {
+        if (!isUpdating) updateAllUI();
+      }, DEBOUNCE_DELAY);
+    };
+
+    // ==================== DATA VALIDATION & SANITIZATION ====================
+    const sanitizeStore = (data) => {
+      if (!data || typeof data !== 'object') return null;
+      const sanitized = {
+        periods: {},
+        categories: Array.isArray(data.categories) ? data.categories : [],
+        currentPeriod: String(data.currentPeriod || '2024'),
+        planningAnnualMode: !!data.planningAnnualMode,
+        trackingAnnualMode: !!data.trackingAnnualMode,
+      };
+      
+      // Sanitize categories
+      sanitized.categories = sanitized.categories.filter(c => c && c.id && c.name).map(c => ({
+        id: String(c.id),
+        name: String(c.name).substring(0, 50)
+      }));
+      
+      // Sanitize periods
+      if (data.periods && typeof data.periods === 'object') {
+        Object.keys(data.periods).forEach(year => {
+          const period = data.periods[year];
+          if (period && typeof period === 'object') {
+            sanitized.periods[year] = {
+              planned: {},
+              actual: {}
+            };
+            
+            sanitized.categories.forEach(cat => {
+              sanitized.periods[year].planned[cat.id] = { q1: 0, q2: 0, q3: 0, q4: 0 };
+              sanitized.periods[year].actual[cat.id] = { q1: 0, q2: 0, q3: 0, q4: 0 };
+              
+              if (period.planned && period.planned[cat.id]) {
+                const p = period.planned[cat.id];
+                sanitized.periods[year].planned[cat.id] = {
+                  q1: safeNumber(p.q1),
+                  q2: safeNumber(p.q2),
+                  q3: safeNumber(p.q3),
+                  q4: safeNumber(p.q4),
+                };
+              }
+              
+              if (period.actual && period.actual[cat.id]) {
+                const a = period.actual[cat.id];
+                sanitized.periods[year].actual[cat.id] = {
+                  q1: safeNumber(a.q1),
+                  q2: safeNumber(a.q2),
+                  q3: safeNumber(a.q3),
+                  q4: safeNumber(a.q4),
+                };
+              }
+            });
+          }
+        });
+      }
+      
+      return sanitized;
+    };
+
+    // ==================== INITIALIZATION ====================
+    const initDemo = () => {
+      if (Object.keys(store.periods).length > 0) return;
+      
+      const cats = [
+        { id: 'hardware', name: 'Hardware' },
+        { id: 'software', name: 'Software' },
+        { id: 'cloud', name: 'Cloud Services' },
+        { id: 'ai_ml', name: 'AI & Machine Learning' }
+      ];
+      store.categories = cats;
+      
+      [2022, 2023, 2024].forEach(y => {
+        store.periods[y] = { planned: {}, actual: {} };
+        cats.forEach(c => {
+          const base = c.id === 'hardware' ? 52000 : c.id === 'software' ? 34000 : c.id === 'cloud' ? 28000 : 22000;
+          const yearlyPlan = base * (y === 2022 ? 0.92 : y === 2023 ? 1.0 : 1.13);
+          const yearlyActual = yearlyPlan * (y === 2022 ? 0.84 : y === 2023 ? 0.89 : 0.96);
+          store.periods[y].planned[c.id] = { q1: yearlyPlan/4, q2: yearlyPlan/4, q3: yearlyPlan/4, q4: yearlyPlan/4 };
+          store.periods[y].actual[c.id] = { q1: yearlyActual/4, q2: yearlyActual/4, q3: yearlyActual/4, q4: yearlyActual/4 };
+        });
+      });
+    };
+
+    // ==================== BACKEND INTEGRATION ====================
+    const checkHealth = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const response = await fetch(`${API_BASE}/health`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        const data = await response.json();
+        const statusDot = document.querySelector('.status-dot');
+        if (statusDot) {
+          if (data.status === 'healthy') {
+            statusDot.classList.add('healthy');
+            document.getElementById('healthStatus').innerHTML = `<span class="status-dot healthy"></span> ✅ Server connected | AI: ${data.ai ? 'Active' : 'Mock Mode'}`;
+          } else {
+            document.getElementById('healthStatus').innerHTML = `<span class="status-dot"></span> ⚠️ Server connected (AI in mock mode)`;
+          }
+        }
+      } catch (error) {
+        document.getElementById('healthStatus').innerHTML = `<span class="status-dot"></span> ❌ Cannot connect to server. Make sure backend is running on port 3001`;
+      }
+    };
+
+    const uploadExcel = async (file) => {
+      if (!file) return;
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      showNotification('Uploading file...', 'info');
+      const statusDiv = document.getElementById('uploadStatus');
+      if (statusDiv) statusDiv.innerHTML = '<div style="background:#e2e3e5; padding:8px; border-radius:8px;">Uploading...</div>';
+      
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const response = await fetch(`${API_BASE}/upload-excel`, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          // Import data safely
+          for (let i = 0; i < data.data.categories.length; i++) {
+            const catName = data.data.categories[i];
+            if (!catName) continue;
+            
+            const catId = catName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now() + i;
+            
+            if (!store.categories.find(c => c.name === catName)) {
+              store.categories.push({ id: catId, name: catName.substring(0, 50) });
+              
+              Object.keys(store.periods).forEach(p => {
+                if (store.periods[p]) {
+                  store.periods[p].planned[catId] = {
+                    q1: safeNumber(data.data.planned[i]?.q1),
+                    q2: safeNumber(data.data.planned[i]?.q2),
+                    q3: safeNumber(data.data.planned[i]?.q3),
+                    q4: safeNumber(data.data.planned[i]?.q4),
+                  };
+                  store.periods[p].actual[catId] = {
+                    q1: safeNumber(data.data.actual[i]?.q1),
+                    q2: safeNumber(data.data.actual[i]?.q2),
+                    q3: safeNumber(data.data.actual[i]?.q3),
+                    q4: safeNumber(data.data.actual[i]?.q4),
+                  };
+                }
+              });
+            }
+          }
+          
+          updateAllUI();
+          showNotification(`Successfully loaded ${data.data.categories.length} categories!`, 'success');
+          if (statusDiv) {
+            statusDiv.innerHTML = `<div style="background:#d4edda; padding:8px; border-radius:8px; color:#155724;">✅ Successfully imported ${data.data.categories.length} categories</div>`;
+            setTimeout(() => { if (statusDiv) statusDiv.innerHTML = ''; }, 5000);
+          }
+        } else {
+          throw new Error(data.error || 'Upload failed');
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        showNotification('Failed to upload Excel file', 'error');
+        if (statusDiv) {
+          statusDiv.innerHTML = '<div style="background:#f8d7da; padding:8px; border-radius:8px; color:#721c24;">❌ Upload failed</div>';
+          setTimeout(() => { if (statusDiv) statusDiv.innerHTML = ''; }, 5000);
+        }
+      }
+    };
+
+    const runAIAnalysis = async () => {
+      const analysisDiv = document.getElementById('aiAnalysisResult');
+      if (!analysisDiv) return;
+      
+      analysisDiv.innerHTML = '<div style="text-align: center; padding: 20px;"><div class="loading-spinner"></div> Analyzing your budget data with AI...</div>';
+      
+      const period = store.periods[store.currentPeriod];
+      if (!period) {
+        analysisDiv.innerHTML = '<div style="color: #dc2626;">No data available for analysis</div>';
+        return;
+      }
+      
+      const budgetDataForAI = store.categories.map(cat => {
+        const planned = period.planned[cat.id] || { q1: 0, q2: 0, q3: 0, q4: 0 };
+        const actual = period.actual[cat.id] || { q1: 0, q2: 0, q3: 0, q4: 0 };
+        return {
+          category: cat.name,
+          planned: {
+            total: getCategoryTotal(period.planned, cat.id),
+            q1: safeNumber(planned.q1),
+            q2: safeNumber(planned.q2),
+            q3: safeNumber(planned.q3),
+            q4: safeNumber(planned.q4)
+          },
+          actual: {
+            total: getCategoryTotal(period.actual, cat.id),
+            q1: safeNumber(actual.q1),
+            q2: safeNumber(actual.q2),
+            q3: safeNumber(actual.q3),
+            q4: safeNumber(actual.q4)
+          }
+        };
+      });
+      
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const response = await fetch(`${API_BASE}/ai-analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ budgetData: budgetDataForAI, period: store.currentPeriod }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        const data = await response.json();
+        
+        if (data.success && data.analysis) {
+          displayAIAnalysis(data.analysis);
+          showNotification('AI analysis complete!', 'success');
+        } else {
+          throw new Error('Invalid response');
+        }
+      } catch (error) {
+        console.error('AI Analysis error:', error);
+        displayAIAnalysis(generateMockAnalysis(budgetDataForAI));
+        showNotification('Using mock analysis (backend unavailable)', 'warning');
+      }
+    };
+
+    const displayAIAnalysis = (analysis) => {
+      const analysisDiv = document.getElementById('aiAnalysisResult');
+      if (!analysisDiv) return;
+      
+      const nextQuarter = safeNumber(analysis.forecast?.nextQuarter);
+      const nextYear = safeNumber(analysis.forecast?.nextYear);
+      
+      const html = `
+        <div class="ai-analysis-card">
+          <h4>📊 Summary</h4>
+          <p>${escapeHtml(analysis.summary || 'No summary available')}</p>
+        </div>
+        <div class="ai-analysis-card">
+          <h4>🎯 Top Insights</h4>
+          ${analysis.topInsights && analysis.topInsights.length > 0 ? 
+            analysis.topInsights.map(insight => `
+              <div class="insight-item">
+                <strong>${escapeHtml(insight.category || 'Unknown')}</strong><br>
+                ${escapeHtml(insight.issue || 'No data')}<br>
+                <small>${escapeHtml(insight.impact || '')}</small>
+              </div>
+            `).join('') : '<p>No significant insights found.</p>'}
+        </div>
+        <div class="ai-analysis-card">
+          <h4>💡 Recommendations</h4>
+          <ul style="margin-left: 20px;">
+            ${(analysis.recommendations || []).map(rec => `<li>${escapeHtml(rec)}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="ai-analysis-card">
+          <h4>⚠️ Risks</h4>
+          <ul style="margin-left: 20px;">
+            ${(analysis.risks || []).map(risk => `<li>${escapeHtml(risk)}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="ai-analysis-card">
+          <h4>🔮 Forecast</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
+            <div><strong>Next Quarter:</strong><br><span style="font-size: 18px; color: #3b82f6;">${formatCurrency(nextQuarter)}</span></div>
+            <div><strong>Next Year:</strong><br><span style="font-size: 18px; color: #3b82f6;">${formatCurrency(nextYear)}</span></div>
+          </div>
+          <p style="font-size: 0.75rem;">${escapeHtml(analysis.forecast?.insights || 'Forecast based on current trends.')}</p>
+        </div>
+      `;
+      analysisDiv.innerHTML = html;
+    };
+
+    const generateMockAnalysis = (budgetData) => {
+      const totalPlanned = budgetData.reduce((sum, item) => sum + safeNumber(item.planned.total), 0);
+      const totalActual = budgetData.reduce((sum, item) => sum + safeNumber(item.actual.total), 0);
+      const variance = totalActual - totalPlanned;
+      
+      return {
+        summary: `Total budget: ${formatCurrency(totalPlanned)} | Actual spend: ${formatCurrency(totalActual)} | ${variance > 0 ? `Over budget by ${formatCurrency(Math.abs(variance))}` : `Under budget by ${formatCurrency(Math.abs(variance))}`}`,
+        topInsights: budgetData.filter(item => item.actual.total > item.planned.total).slice(0, 3).map(item => ({
+          category: item.category,
+          issue: `${((item.actual.total - item.planned.total) / Math.max(0.01, item.planned.total) * 100).toFixed(1)}% over budget`,
+          impact: `Excess of ${formatCurrency(item.actual.total - item.planned.total)}`
+        })),
+        recommendations: [
+          'Optimize cloud resources with reserved instances',
+          'Review software licenses for unused subscriptions',
+          'Implement cost tagging for better tracking',
+          'Consider annual prepayment for software licenses'
+        ],
+        risks: ['Cloud costs trending upward', 'Hardware refresh cycle approaching', 'Software license true-up risk'],
+        forecast: {
+          nextQuarter: totalActual * 1.025,
+          nextYear: totalActual * 1.08,
+          insights: 'Expected 2.5% quarterly growth, 8% annual growth based on current trends'
+        }
+      };
+    };
+
+    const escapeHtml = (str) => {
+      if (!str) return '';
+      return String(str).replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+      });
+    };
+
+    // ==================== FORECAST ENGINE ====================
+    const computeHistoricalCAGR = () => {
+      const years = Object.keys(store.periods).map(Number).sort();
+      if (years.length < 2) return 0.03;
+      const actualVals = years.map(y => getAllTotal(store.periods[y]?.actual));
+      const first = actualVals[0];
+      const last = actualVals[actualVals.length - 1];
+      if (first <= 0 || last <= 0) return 0.03;
+      const nYears = years[years.length - 1] - years[0];
+      if (nYears <= 0) return 0.03;
+      const cagr = Math.pow(last / first, 1 / nYears) - 1;
+      return Math.min(Math.max(cagr, -0.05), 0.25);
+    };
+
+    const getRates = () => ({
+      historical: computeHistoricalCAGR(),
+      inflation: safeNumber(document.getElementById('inflationSlider')?.value, 3) / 100,
+      aiInvestment: safeNumber(document.getElementById('aiSlider')?.value, 12) / 100,
+      cloudAdoption: safeNumber(document.getElementById('cloudSlider')?.value, 8) / 100,
+      optimization: safeNumber(document.getElementById('optSlider')?.value, -5) / 100,
+    });
+
+    const generateForecast = () => {
+      const yearsAhead = parseInt(document.getElementById('forecastHorizon')?.value || '5');
+      const currentActual = getAllTotal(store.periods[store.currentPeriod]?.actual);
+      if (currentActual <= 0) return { periods: [], datasets: {} };
+      
+      const rates = getRates();
+      const periods = [];
+      const baseYear = parseInt(store.currentPeriod);
+      for (let i = 0; i <= yearsAhead; i++) periods.push(baseYear + i);
+      
+      const datasets = {};
+      for (const [key, active] of Object.entries(activeForecastVars)) {
+        if (active && rates[key] !== undefined) {
+          const vals = [];
+          let val = currentActual;
+          for (let i = 0; i <= yearsAhead; i++) {
+            vals.push(val);
+            val *= 1 + (rates[key] || 0);
+          }
+          datasets[key] = vals;
+        }
+      }
+      return { periods, datasets };
+    };
+
+    const renderForecast = () => {
+      const canvas = document.getElementById('forecastCanvas');
+      if (!canvas) return;
+      
+      const { periods, datasets } = generateForecast();
+      if (periods.length === 0 || Object.keys(datasets).length === 0) {
+        const ctx = canvas.getContext('2d');
+        if (forecastChart) forecastChart.destroy();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+      
+      const labels = periods.map(p => `'${p.toString().slice(-2)}`);
+      const colorMap = { historical: '#2563eb', inflation: '#eab308', aiInvestment: '#a855f7', cloudAdoption: '#06b6d4', optimization: '#10b981' };
+      const nameMap = { historical: 'Historical CAGR', inflation: 'Inflation only', aiInvestment: 'AI Investment', cloudAdoption: 'Cloud Adoption', optimization: 'Optimization' };
+      const ctx = canvas.getContext('2d');
+      if (forecastChart) forecastChart.destroy();
+      
+      const chartData = { labels, datasets: [] };
+      for (const [k, vals] of Object.entries(datasets)) {
+        chartData.datasets.push({
+          label: nameMap[k],
+          data: vals,
+          borderColor: colorMap[k],
+          backgroundColor: 'transparent',
+          borderWidth: 2.5,
+          tension: 0.2,
+          pointRadius: 2,
+        });
+      }
+      
+      forecastChart = new Chart(ctx, {
+        type: 'line',
+        data: chartData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${formatCurrency(ctx.raw)}`,
+              },
+            },
+          },
+        },
+      });
+      
+      const legend = Object.keys(datasets).map(k => `<span style="display:inline-flex;gap:6px;"><span style="background:${colorMap[k]};width:16px;height:3px;"></span> ${nameMap[k]}</span>`).join('');
+      const legendDiv = document.getElementById('forecastLegend');
+      if (legendDiv) legendDiv.innerHTML = legend;
+      
+      const rates = getRates();
+      const insightDiv = document.getElementById('forecastInsightText');
+      if (insightDiv) {
+        insightDiv.innerHTML = `🔍 Active: ${Object.keys(activeForecastVars).filter(k => activeForecastVars[k]).map(k => nameMap[k]).join(', ')}. CAGR: ${(rates.historical * 100).toFixed(1)}% | Inflation: ${(rates.inflation * 100).toFixed(1)}% | AI: ${(rates.aiInvestment * 100).toFixed(1)}%`;
+      }
+    };
+
+    // ==================== UI RENDER FUNCTIONS ====================
+    const renderCategoriesUI = () => {
+      const container = document.getElementById('categoriesList');
+      if (!container) return;
+      
+      const period = store.periods[store.currentPeriod];
+      if (!period) return;
+      
+      container.innerHTML = store.categories.map(cat => {
+        const planned = getCategoryTotal(period.planned, cat.id);
+        const actual = getCategoryTotal(period.actual, cat.id);
+        return `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #e2e8f0;">
+          <div><b>${escapeHtml(cat.name)}</b><div style="font-size:12px;">Budget: ${formatCurrency(planned)} | Spent: ${formatCurrency(actual)}</div></div>
+          <button class="delCatBtn" data-id="${cat.id}" style="background:#ef4444; padding:4px 12px; border-radius:20px; border:none; color:white; cursor:pointer;">X</button>
+        </div>`;
+      }).join('');
+      
+      // Event delegation for delete buttons
+      container.querySelectorAll('.delCatBtn').forEach(btn => {
+        btn.removeEventListener('click', handleDeleteCategory);
+        btn.addEventListener('click', handleDeleteCategory);
+      });
+    };
+
+    const handleDeleteCategory = (e) => {
+      const id = e.target.dataset.id;
+      if (store.categories.length <= 1) {
+        showNotification('At least one category required', 'warning');
+        return;
+      }
+      store.categories = store.categories.filter(c => c.id !== id);
+      Object.keys(store.periods).forEach(p => {
+        if (store.periods[p]) {
+          delete store.periods[p].planned[id];
+          delete store.periods[p].actual[id];
+        }
+      });
+      updateAllUI();
+    };
+
+    const renderPlanning = () => {
+      const thead = document.getElementById('planningHead');
+      const tbody = document.getElementById('planningBody');
+      if (!thead || !tbody) return;
+      
+      const period = store.periods[store.currentPeriod];
+      if (!period) return;
+      
+      if (!store.planningAnnualMode) {
+        thead.innerHTML = '<tr><th>Category</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Total</th></tr>';
+        tbody.innerHTML = store.categories.map(cat => {
+          const p = period.planned[cat.id] || { q1: 0, q2: 0, q3: 0, q4: 0 };
+          const total = p.q1 + p.q2 + p.q3 + p.q4;
+          return `<tr>
+            <td>${escapeHtml(cat.name)}</td>
+            <td><input type="number" class="planQ" data-cat="${cat.id}" data-q="q1" value="${Math.round(p.q1)}" min="0" step="100" style="width:70px"></td>
+            <td><input type="number" class="planQ" data-cat="${cat.id}" data-q="q2" value="${Math.round(p.q2)}" min="0" step="100" style="width:70px"></td>
+            <td><input type="number" class="planQ" data-cat="${cat.id}" data-q="q3" value="${Math.round(p.q3)}" min="0" step="100" style="width:70px"></td>
+            <td><input type="number" class="planQ" data-cat="${cat.id}" data-q="q4" value="${Math.round(p.q4)}" min="0" step="100" style="width:70px"></td>
+            <td>${formatCurrency(total)}</td>
+          </tr>`;
+        }).join('');
+        
+        document.querySelectorAll('.planQ').forEach(inp => {
+          inp.removeEventListener('change', handlePlanChange);
+          inp.addEventListener('change', handlePlanChange);
+        });
+      } else {
+        thead.innerHTML = '<tr><th>Category</th><th>Annual Budget ($)</th></tr>';
+        tbody.innerHTML = store.categories.map(cat => {
+          const totalPlan = getCategoryTotal(period.planned, cat.id);
+          return `<tr>
+            <td>${escapeHtml(cat.name)}</td>
+            <td><input type="number" class="annualPlanBudget" data-cat="${cat.id}" value="${Math.round(totalPlan)}" min="0" step="1000" style="width:130px"></td>
+          </tr>`;
+        }).join('');
+        
+        document.querySelectorAll('.annualPlanBudget').forEach(inp => {
+          inp.removeEventListener('change', handleAnnualPlanChange);
+          inp.addEventListener('change', handleAnnualPlanChange);
+        });
+      }
+    };
+
+    const handlePlanChange = (e) => {
+      const val = safeNumber(e.target.value);
+      e.target.value = val;
+      const catId = e.target.dataset.cat;
+      const q = e.target.dataset.q;
+      if (store.periods[store.currentPeriod]?.planned[catId]) {
+        store.periods[store.currentPeriod].planned[catId][q] = val;
+        debouncedUpdate();
+      }
+    };
+
+    const handleAnnualPlanChange = (e) => {
+      const annual = safeNumber(e.target.value);
+      e.target.value = annual;
+      const perQ = annual / 4;
+      const catId = e.target.dataset.cat;
+      const plan = store.periods[store.currentPeriod]?.planned[catId];
+      if (plan) {
+        plan.q1 = perQ;
+        plan.q2 = perQ;
+        plan.q3 = perQ;
+        plan.q4 = perQ;
+        debouncedUpdate();
+      }
+    };
+
+    const renderTracking = () => {
+      const thead = document.getElementById('trackingHead');
+      const tbody = document.getElementById('trackingBody');
+      if (!thead || !tbody) return;
+      
+      const period = store.periods[store.currentPeriod];
+      if (!period) return;
+      
+      if (!store.trackingAnnualMode) {
+        thead.innerHTML = '<tr><th>Category</th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Total</th><th>vs Plan</th></tr>';
+        tbody.innerHTML = store.categories.map(cat => {
+          const act = period.actual[cat.id] || { q1: 0, q2: 0, q3: 0, q4: 0 };
+          const planTotal = getCategoryTotal(period.planned, cat.id);
+          const actTotal = getCategoryTotal(period.actual, cat.id);
+          const variance = actTotal - planTotal;
+          return `<tr>
+            <td>${escapeHtml(cat.name)}</td>
+            <td><input type="number" class="trackQ" data-cat="${cat.id}" data-q="q1" value="${Math.round(act.q1)}" min="0" step="100" style="width:70px"></td>
+            <td><input type="number" class="trackQ" data-cat="${cat.id}" data-q="q2" value="${Math.round(act.q2)}" min="0" step="100" style="width:70px"></td>
+            <td><input type="number" class="trackQ" data-cat="${cat.id}" data-q="q3" value="${Math.round(act.q3)}" min="0" step="100" style="width:70px"></td>
+            <td><input type="number" class="trackQ" data-cat="${cat.id}" data-q="q4" value="${Math.round(act.q4)}" min="0" step="100" style="width:70px"></td>
+            <td>${formatCurrency(actTotal)}</td>
+            <td class="${variance > 0 ? 'variance-positive' : 'variance-negative'}">${variance >= 0 ? '+' : ''}${formatCurrency(Math.abs(variance))}</td>
+          </tr>`;
+        }).join('');
+        
+        document.querySelectorAll('.trackQ').forEach(inp => {
+          inp.removeEventListener('change', handleTrackChange);
+          inp.addEventListener('change', handleTrackChange);
+        });
+      } else {
+        thead.innerHTML = '<tr><th>Category</th><th>Annual Actual ($)</th><th>Annual Planned</th><th>Variance</th><th>Utilization</th></tr>';
+        tbody.innerHTML = store.categories.map(cat => {
+          const actTotal = getCategoryTotal(period.actual, cat.id);
+          const planTotal = getCategoryTotal(period.planned, cat.id);
+          const variance = actTotal - planTotal;
+          const util = planTotal > 0 ? (actTotal / planTotal) * 100 : 0;
+          return `<tr>
+            <td>${escapeHtml(cat.name)}</td>
+            <td><input type="number" class="trackAnnual" data-cat="${cat.id}" value="${Math.round(actTotal)}" min="0" step="1000" style="width:100px"></td>
+            <td>${formatCurrency(planTotal)}</td>
+            <td class="${variance > 0 ? 'variance-positive' : 'variance-negative'}">${variance >= 0 ? '+' : ''}${formatCurrency(Math.abs(variance))}</td>
+            <td>${util.toFixed(1)}%</td>
+          </tr>`;
+        }).join('');
+        
+        document.querySelectorAll('.trackAnnual').forEach(inp => {
+          inp.removeEventListener('change', handleAnnualTrackChange);
+          inp.addEventListener('change', handleAnnualTrackChange);
+        });
+      }
+      
+      const quickSelect = document.getElementById('quickExpenseCat');
+      if (quickSelect) {
+        quickSelect.innerHTML = store.categories.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      }
+    };
+
+    const handleTrackChange = (e) => {
+      const val = safeNumber(e.target.value);
+      e.target.value = val;
+      const catId = e.target.dataset.cat;
+      const q = e.target.dataset.q;
+      if (store.periods[store.currentPeriod]?.actual[catId]) {
+        store.periods[store.currentPeriod].actual[catId][q] = val;
+        debouncedUpdate();
+      }
+    };
+
+    const handleAnnualTrackChange = (e) => {
+      const annual = safeNumber(e.target.value);
+      e.target.value = annual;
+      const perQ = annual / 4;
+      const catId = e.target.dataset.cat;
+      const actObj = store.periods[store.currentPeriod]?.actual[catId];
+      if (actObj) {
+        actObj.q1 = perQ;
+        actObj.q2 = perQ;
+        actObj.q3 = perQ;
+        actObj.q4 = perQ;
+        debouncedUpdate();
+      }
+    };
+
+    const quickExpenseAdd = () => {
+      const catId = document.getElementById('quickExpenseCat')?.value;
+      const amount = safeNumber(document.getElementById('quickExpenseAmount')?.value);
+      if (amount <= 0) {
+        showNotification('Enter a positive amount', 'warning');
+        return;
+      }
+      const act = store.periods[store.currentPeriod]?.actual[catId];
+      if (act) {
+        const perQ = amount / 4;
+        act.q1 += perQ;
+        act.q2 += perQ;
+        act.q3 += perQ;
+        act.q4 += perQ;
+        updateAllUI();
+        const amountInput = document.getElementById('quickExpenseAmount');
+        if (amountInput) amountInput.value = '';
+        showNotification(`Added ${formatCurrency(amount)} to category`, 'success');
+      }
+    };
+
+    const renderYearlySummary = () => {
+      const period = store.periods[store.currentPeriod];
+      if (!period) return;
+      
+      const totalPlan = getAllTotal(period.planned);
+      const totalActual = getAllTotal(period.actual);
+      const variance = totalActual - totalPlan;
+      const util = totalPlan > 0 ? (totalActual / totalPlan) * 100 : 0;
+      
+      const summaryDiv = document.getElementById('yearlySummaryContent');
+      if (summaryDiv) {
+        summaryDiv.innerHTML = `<div style="background:#eef2ff; border-radius:16px; padding:16px;">
+          <strong>FY ${store.currentPeriod} Summary</strong><br>
+          Budget: ${formatCurrency(totalPlan)} | Actual: ${formatCurrency(totalActual)} | 
+          Variance: ${variance >= 0 ? '+' : ''}${formatCurrency(Math.abs(variance))} (${variance >= 0 ? 'Over' : 'Under'}) | 
+          Utilization: ${util.toFixed(1)}%</div>`;
+      }
+      
+      const detailBody = document.getElementById('yearlyDetailBody');
+      if (detailBody) {
+        detailBody.innerHTML = store.categories.map(cat => {
+          const plan = getCategoryTotal(period.planned, cat.id);
+          const act = getCategoryTotal(period.actual, cat.id);
+          const varAmt = act - plan;
+          const utilCat = plan > 0 ? (act / plan) * 100 : 0;
+          return `<tr>
+            <td>${escapeHtml(cat.name)}</td>
+            <td>${formatCurrency(plan)}</td>
+            <td>${formatCurrency(act)}</td>
+            <td class="${varAmt > 0 ? 'variance-positive' : 'variance-negative'}">${varAmt >= 0 ? '+' : ''}${formatCurrency(Math.abs(varAmt))}</td>
+            <td>${utilCat.toFixed(1)}%</td>
+          </tr>`;
+        }).join('');
+      }
+    };
+
+    const updateDashboard = () => {
+      const period = store.periods[store.currentPeriod];
+      if (!period) return;
+      
+      const totalPlan = getAllTotal(period.planned);
+      const totalActual = getAllTotal(period.actual);
+      const variance = totalActual - totalPlan;
+      const util = totalPlan > 0 ? (totalActual / totalPlan) * 100 : 0;
+      
+      const statPlanned = document.getElementById('statPlanned');
+      const statActual = document.getElementById('statActual');
+      const statVariance = document.getElementById('statVariance');
+      const statUtil = document.getElementById('statUtil');
+      const periodSummary = document.getElementById('periodSummaryText');
+      const activeYearDisplay = document.getElementById('activeYearDisplay');
+      
+      if (statPlanned) statPlanned.innerText = formatCurrency(totalPlan);
+      if (statActual) statActual.innerText = formatCurrency(totalActual);
+      if (statVariance) statVariance.innerHTML = (variance >= 0 ? '+' : '') + formatCurrency(Math.abs(variance));
+      if (statUtil) statUtil.innerText = util.toFixed(1) + '%';
+      if (periodSummary) periodSummary.innerHTML = `Planned ${formatCurrency(totalPlan)} | Spent ${formatCurrency(totalActual)} | ${util.toFixed(0)}% used`;
+      if (activeYearDisplay) activeYearDisplay.innerText = store.currentPeriod;
+      
+      const cagr = computeHistoricalCAGR();
+      let insight = `🧠 <strong>AI Insight:</strong> Historical CAGR: ${(cagr * 100).toFixed(1)}%. `;
+      if (variance > 0) {
+        const overspent = store.categories.filter(c => getCategoryTotal(period.actual, c.id) > getCategoryTotal(period.planned, c.id)).map(c => c.name).slice(0, 2).join(', ');
+        insight += `⚠️ Overspend by ${formatCurrency(variance)}. Review ${overspent || 'categories'}. `;
+      } else {
+        insight += `✅ Under budget by ${formatCurrency(Math.abs(variance))}. Consider reallocating to AI/Cloud initiatives. `;
+      }
+      insight += `Inflation at ${safeNumber(document.getElementById('inflationSlider')?.value, 3)}% and AI driver ${safeNumber(document.getElementById('aiSlider')?.value, 12)}% shape future growth.`;
+      
+      const insightDiv = document.getElementById('dynamicAIInsight');
+      if (insightDiv) insightDiv.innerHTML = insight;
+      
+      const cagrDiv = document.getElementById('cagrBlock');
+      if (cagrDiv) {
+        cagrDiv.innerHTML = `<strong>📐 CAGR (Compound Annual Growth Rate)</strong> = (End Value/Start Value)^(1/years)-1. Current CAGR = ${(cagr * 100).toFixed(2)}% based on historical actual totals.`;
+      }
+    };
+
+    const renderHistory = () => {
+      const canvas = document.getElementById('historyCanvas');
+      if (!canvas) return;
+      
+      const years = Object.keys(store.periods).sort();
+      const planned = years.map(y => getAllTotal(store.periods[y]?.planned));
+      const actual = years.map(y => getAllTotal(store.periods[y]?.actual));
+      const ctx = canvas.getContext('2d');
+      if (historyChart) historyChart.destroy();
+      
+      historyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: years.map(y => `FY ${y}`),
+          datasets: [
+            { label: 'Planned', data: planned, borderColor: '#3b82f6', fill: false },
+            { label: 'Actual', data: actual, borderColor: '#ef4444', fill: false }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: true }
+      });
+      
+      const historyBody = document.getElementById('historyBody');
+      if (historyBody) {
+        historyBody.innerHTML = years.slice().reverse().map(y => {
+          const p = getAllTotal(store.periods[y]?.planned);
+          const a = getAllTotal(store.periods[y]?.actual);
+          const u = p > 0 ? (a / p) * 100 : 0;
+          return `<tr><td>FY ${y}</td><td>${formatCurrency(p)}</td><td>${formatCurrency(a)}</td><td>${u.toFixed(1)}%</td></tr>`;
+        }).join('');
+      }
+    };
+
+    // ==================== DATA MANAGEMENT ====================
+    const addCategory = () => {
+      const nameInput = document.getElementById('catName');
+      const budgetInput = document.getElementById('catBudget');
+      const name = nameInput?.value?.trim();
+      const budget = safeNumber(budgetInput?.value);
+      
+      if (!name) {
+        showNotification('Enter category name', 'warning');
+        return;
+      }
+      
+      if (store.categories.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+        showNotification('Category already exists', 'warning');
+        return;
+      }
+      
+      const id = name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
+      store.categories.push({ id, name: name.substring(0, 50) });
+      
+      Object.keys(store.periods).forEach(p => {
+        if (store.periods[p]) {
+          store.periods[p].planned[id] = { q1: budget/4, q2: budget/4, q3: budget/4, q4: budget/4 };
+          store.periods[p].actual[id] = { q1: 0, q2: 0, q3: 0, q4: 0 };
+        }
+      });
+      
+      if (nameInput) nameInput.value = '';
+      if (budgetInput) budgetInput.value = '';
+      updateAllUI();
+      showNotification(`Category "${name}" added`, 'success');
+    };
+
+    const addPreset = () => {
+      const preset = document.getElementById('presetSelect')?.value;
+      if (preset) {
+        const [name, budget] = preset.split(',');
+        const nameInput = document.getElementById('catName');
+        const budgetInput = document.getElementById('catBudget');
+        if (nameInput) nameInput.value = name;
+        if (budgetInput) budgetInput.value = budget;
+        addCategory();
+      }
+    };
+
+    const addNewYear = () => {
+      const years = Object.keys(store.periods).map(Number);
+      const newYear = (Math.max(...years, 2024) + 1).toString();
+      store.periods[newYear] = { planned: {}, actual: {} };
+      store.categories.forEach(c => {
+        store.periods[newYear].planned[c.id] = { q1: 0, q2: 0, q3: 0, q4: 0 };
+        store.periods[newYear].actual[c.id] = { q1: 0, q2: 0, q3: 0, q4: 0 };
+      });
+      store.currentPeriod = newYear;
+      refreshSelector();
+      updateAllUI();
+      showNotification(`Added FY ${newYear}`, 'success');
+    };
+
+    const deleteCurrentYear = () => {
+      if (Object.keys(store.periods).length <= 1) {
+        showNotification('Cannot delete the last remaining year', 'warning');
+        return;
+      }
+      if (confirm(`Delete FY ${store.currentPeriod}? This cannot be undone.`)) {
+        delete store.periods[store.currentPeriod];
+        const remainingYears = Object.keys(store.periods).sort();
+        store.currentPeriod = remainingYears[remainingYears.length - 1];
+        refreshSelector();
+        updateAllUI();
+        showNotification(`Deleted FY ${store.currentPeriod}`, 'success');
+      }
+    };
+
+    const refreshSelector = () => {
+      const selector = document.getElementById('periodSelect');
+      if (selector) {
+        selector.innerHTML = Object.keys(store.periods).sort().reverse().map(y => 
+          `<option value="${y}" ${y === store.currentPeriod ? 'selected' : ''}>FY ${y}</option>`
+        ).join('');
+      }
+    };
+
+    const exportData = (type) => {
+      const period = store.periods[store.currentPeriod];
+      if (!period) {
+        showNotification('No data to export', 'warning');
+        return;
+      }
+      
+      const rows = [['Category', 'Q1', 'Q2', 'Q3', 'Q4', 'Total']];
+      store.categories.forEach(c => {
+        const d = period[type][c.id];
+        if (d) {
+          rows.push([c.name, d.q1, d.q2, d.q3, d.q4, d.q1 + d.q2 + d.q3 + d.q4]);
+        }
+      });
+      
+      const csv = rows.map(r => r.map(cell => `"${cell}"`).join(',')).join('\n');
+      const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.href = url;
+      link.download = `${type}_${store.currentPeriod}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      showNotification(`Exported ${type} data`, 'success');
+    };
+
+    const backup = () => {
+      const dataStr = JSON.stringify(store, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `budget_backup_${new Date().toISOString().slice(0,19)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showNotification('Backup exported!', 'success');
+    };
+
+    const restore = () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            const sanitized = sanitizeStore(data);
+            if (sanitized && Object.keys(sanitized.periods).length > 0) {
+              store = sanitized;
+              refreshSelector();
+              updateAllUI();
+              showNotification('Restored successfully!', 'success');
+            } else {
+              throw new Error('Invalid data format');
+            }
+          } catch (err) {
+            showNotification('Invalid backup file', 'error');
+          }
+        };
+        reader.readAsText(file);
+      };
+      input.click();
+    };
+
+    const resetDemo = () => {
+      if (confirm('Reset all data to demo values? This will erase all current data.')) {
+        store = {
+          periods: {},
+          categories: [],
+          currentPeriod: '2024',
+          planningAnnualMode: false,
+          trackingAnnualMode: false,
+        };
+        initDemo();
+        refreshSelector();
+        updateAllUI();
+        showNotification('Reset complete!', 'success');
+      }
+    };
+
+    const updateAllUI = () => {
+      if (isUpdating) return;
+      isUpdating = true;
+      try {
+        renderCategoriesUI();
+        renderPlanning();
+        renderTracking();
+        updateDashboard();
+        renderYearlySummary();
+        renderHistory();
+        renderForecast();
+        saveToLocalStorage();
+      } finally {
+        isUpdating = false;
+      }
+    };
+
+    const saveToLocalStorage = () => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+      } catch (e) {
+        console.warn('Failed to save to localStorage:', e);
+      }
+    };
+
+    const loadFromLocalStorage = () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const sanitized = sanitizeStore(parsed);
+          if (sanitized && Object.keys(sanitized.periods).length > 0) {
+            store = sanitized;
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to load from localStorage:', e);
+      }
+    };
+
+    // ==================== EVENT LISTENERS SETUP ====================
+    const setupEventListeners = () => {
+      // Collapsible panels
+      document.querySelectorAll('.card-header').forEach(header => {
+        header.addEventListener('click', () => {
+          const panelId = header.dataset.panel;
+          const body = document.getElementById(panelId);
+          if (body) {
+            body.classList.toggle('collapsed');
+            const icon = header.querySelector('.toggle-icon');
+            if (icon) icon.innerHTML = body.classList.contains('collapsed') ? '▶' : '▼';
+          }
+        });
+      });
+      
+      // Buttons
+      const addYearBtn = document.getElementById('addYearBtn');
+      const deleteYearBtn = document.getElementById('deleteYearBtn');
+      const addCatBtn = document.getElementById('addCatBtn');
+      const addPresetBtn = document.getElementById('addPresetBtn');
+      const viewQuarterlyBtn = document.getElementById('viewQuarterlyBtn');
+      const viewAnnualBtn = document.getElementById('viewAnnualBtn');
+      const trackQuarterlyBtn = document.getElementById('trackQuarterlyBtn');
+      const trackAnnualBtn = document.getElementById('trackAnnualBtn');
+      const quickExpenseBtn = document.getElementById('quickExpenseBtn');
+      const exportPlannedBtn = document.getElementById('exportPlannedBtn');
+      const exportActualBtn = document.getElementById('exportActualBtn');
+      const exportBackupBtn = document.getElementById('exportBackupBtn');
+      const importBackupBtn = document.getElementById('importBackupBtn');
+      const resetAllBtn = document.getElementById('resetAllBtn');
+      const refreshForecastBtn = document.getElementById('refreshForecastBtn');
+      const runAIAnalysisBtn = document.getElementById('runAIAnalysisBtn');
+      const periodSelect = document.getElementById('periodSelect');
+      
+      if (addYearBtn) addYearBtn.onclick = addNewYear;
+      if (deleteYearBtn) deleteYearBtn.onclick = deleteCurrentYear;
+      if (addCatBtn) addCatBtn.onclick = addCategory;
+      if (addPresetBtn) addPresetBtn.onclick = addPreset;
+      if (viewQuarterlyBtn) viewQuarterlyBtn.onclick = () => { store.planningAnnualMode = false; renderPlanning(); };
+      if (viewAnnualBtn) viewAnnualBtn.onclick = () => { store.planningAnnualMode = true; renderPlanning(); };
+      if (trackQuarterlyBtn) trackQuarterlyBtn.onclick = () => { store.trackingAnnualMode = false; renderTracking(); };
+      if (trackAnnualBtn) trackAnnualBtn.onclick = () => { store.trackingAnnualMode = true; renderTracking(); };
+      if (quickExpenseBtn) quickExpenseBtn.onclick = quickExpenseAdd;
+      if (exportPlannedBtn) exportPlannedBtn.onclick = () => exportData('planned');
+      if (exportActualBtn) exportActualBtn.onclick = () => exportData('actual');
+      if (exportBackupBtn) exportBackupBtn.onclick = backup;
+      if (importBackupBtn) importBackupBtn.onclick = restore;
+      if (resetAllBtn) resetAllBtn.onclick = resetDemo;
+      if (refreshForecastBtn) refreshForecastBtn.onclick = renderForecast;
+      if (runAIAnalysisBtn) runAIAnalysisBtn.onclick = runAIAnalysis;
+      if (periodSelect) periodSelect.onchange = (e) => { store.currentPeriod = e.target.value; updateAllUI(); };
+      
+      // Upload handlers
+      const uploadArea = document.getElementById('uploadArea');
+      const fileInput = document.getElementById('excelUpload');
+      const uploadBtn = document.getElementById('uploadBtn');
+      
+      if (uploadArea && fileInput && uploadBtn) {
+        uploadArea.onclick = () => fileInput.click();
+        uploadBtn.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => { if (e.target.files[0]) uploadExcel(e.target.files[0]); };
+        
+        uploadArea.ondragover = (e) => { e.preventDefault(); uploadArea.style.borderColor = '#3b82f6'; };
+        uploadArea.ondragleave = () => { uploadArea.style.borderColor = '#cbd5e1'; };
+        uploadArea.ondrop = (e) => {
+          e.preventDefault();
+          uploadArea.style.borderColor = '#cbd5e1';
+          const file = e.dataTransfer.files[0];
+          if (file) uploadExcel(file);
+        };
+      }
+      
+      // Sliders
+      const syncInflation = () => {
+        const v = document.getElementById('inflationSlider')?.value || 3;
+        const inflationValue = document.getElementById('inflationValue');
+        const inflationNumber = document.getElementById('inflationNumber');
+        if (inflationValue) inflationValue.innerText = v + '%';
+        if (inflationNumber) inflationNumber.value = v;
+        renderForecast();
+        updateDashboard();
+      };
+      
+      const syncAi = () => {
+        const v = document.getElementById('aiSlider')?.value || 12;
+        const aiValue = document.getElementById('aiValue');
+        const aiNumber = document.getElementById('aiNumber');
+        if (aiValue) aiValue.innerText = v + '%';
+        if (aiNumber) aiNumber.value = v;
+        renderForecast();
+        updateDashboard();
+      };
+      
+      const syncCloud = () => {
+        const v = document.getElementById('cloudSlider')?.value || 8;
+        const cloudValue = document.getElementById('cloudValue');
+        if (cloudValue) cloudValue.innerText = v + '%';
+        renderForecast();
+      };
+      
+      const syncOpt = () => {
+        const v = document.getElementById('optSlider')?.value || -5;
+        const optValue = document.getElementById('optValue');
+        if (optValue) optValue.innerText = v + '%';
+        renderForecast();
+      };
+      
+      const inflationSlider = document.getElementById('inflationSlider');
+      const inflationNumber = document.getElementById('inflationNumber');
+      const aiSlider = document.getElementById('aiSlider');
+      const aiNumber = document.getElementById('aiNumber');
+      const cloudSlider = document.getElementById('cloudSlider');
+      const optSlider = document.getElementById('optSlider');
+      
+      if (inflationSlider) inflationSlider.oninput = syncInflation;
+      if (inflationNumber) inflationNumber.onchange = (e) => { if (inflationSlider) inflationSlider.value = e.target.value; syncInflation(); };
+      if (aiSlider) aiSlider.oninput = syncAi;
+      if (aiNumber) aiNumber.onchange = (e) => { if (aiSlider) aiSlider.value = e.target.value; syncAi(); };
+      if (cloudSlider) cloudSlider.oninput = syncCloud;
+      if (optSlider) optSlider.oninput = syncOpt;
+      
+      // Scenario chips
+      document.querySelectorAll('.var-chip').forEach(chip => {
+        chip.onclick = () => {
+          const v = chip.dataset.var;
+          if (v) {
+            activeForecastVars[v] = !activeForecastVars[v];
+            chip.classList.toggle('active');
+            renderForecast();
+          }
+        };
+      });
+    };
+
+    // ==================== INITIALIZATION ====================
+    const init = () => {
+      loadFromLocalStorage();
+      if (Object.keys(store.periods).length === 0) initDemo();
+      refreshSelector();
+      setupEventListeners();
+      updateAllUI();
+      checkHealth();
+    };
+    
+    init();
+  </script>
+</body>
+</html>

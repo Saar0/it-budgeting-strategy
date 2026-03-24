@@ -37,7 +37,7 @@ IT Budget Strategist helps organizations plan, track, and forecast technology ex
 
 ```bash
 # Clone the repository
-git clone https://github.com/Pascal69p/it-budgeting-strategist.git
+git clone https://github.com/Pascal69p/it-budgeting-strategy.git
 cd it-budget-strategist
 
 # Install dependencies

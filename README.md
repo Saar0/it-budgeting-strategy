@@ -1,5 +1,8 @@
 # IT Budget Strategist
 
+>  Maintained version: https://github.com/Pascal69p/it-budgeting-strategy  
+>  My GitHub Profile: https://github.com/Pascal69p  
+
 AI-powered IT budget planning and forecasting platform.
 
 ## Overview
@@ -38,10 +41,4 @@ IT Budget Strategist helps organizations plan, track, and forecast technology ex
 ```bash
 # Clone the repository
 git clone https://github.com/Pascal69p/it-budgeting-strategy.git
-cd it-budget-strategist
-
-# Install dependencies
-npm install
-
-# Initialize database
-npm run init-db
+cd it-budgeting-strategy
